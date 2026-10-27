@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIS Graph</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.2/cytoscape.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/layout-base@2.0.1/layout-base.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cose-base@2.2.0/cose-base.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape-fcose@2.2.0/cytoscape-fcose.js"></script>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+    --hair: #e1e0d9; --ring: rgba(11,11,11,0.10); --edge: #c3c2b7; --hl: #0b0b0b;
+    --f-document: #2a78d6; --f-actor: #eb6834; --f-place: #1baf7a; --f-action: #eda100;
+    --f-legal: #e87ba4; --f-nature: #008300; --f-effect: #6250d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+      --hair: #2c2c2a; --ring: rgba(255,255,255,0.10); --edge: #4a4a46; --hl: #f0efec;
+      --f-document: #3987e5; --f-actor: #d95926; --f-place: #199e70; --f-action: #c98500;
+      --f-legal: #d55181; --f-nature: #008300; --f-effect: #9085e9;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --hair: #2c2c2a; --ring: rgba(255,255,255,0.10); --edge: #4a4a46; --hl: #f0efec;
+    --f-document: #3987e5; --f-actor: #d95926; --f-place: #199e70; --f-action: #c98500;
+    --f-legal: #d55181; --f-nature: #008300; --f-effect: #9085e9;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--page); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+         display: grid; grid-template-rows: auto 1fr; }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 10px 16px;
+           border-bottom: 1px solid var(--hair); background: var(--surface); }
+  header h1 { font-size: 15px; margin: 0; font-weight: 650; }
+  header .stat { color: var(--ink-2); font-size: 13px; }
+  .grow { flex: 1; }
+  input, select, button, textarea { font: inherit; color: var(--ink); background: var(--page);
+    border: 1px solid var(--hair); border-radius: 6px; padding: 5px 9px; }
+  button { cursor: pointer; } button:hover { border-color: var(--muted); }
+  .search { position: relative; }
+  .search input { width: min(320px, 60vw); }
+  #results { position: absolute; z-index: 10; top: 100%; left: 0; right: 0; margin-top: 4px; max-height: 50vh;
+             overflow: auto; background: var(--surface); border: 1px solid var(--hair); border-radius: 8px;
+             box-shadow: 0 6px 20px rgba(0,0,0,.12); }
+  #results div { padding: 6px 10px; cursor: pointer; display: flex; gap: 8px; align-items: center; }
+  #results div:hover { background: var(--page); }
+  main { display: grid; grid-template-columns: 1fr minmax(320px, 420px); min-height: 0; }
+  #cy-wrap { position: relative; min-height: 0; background: var(--surface); }
+  #cy { position: absolute; inset: 0; }
+  #legend { position: absolute; left: 12px; bottom: 12px; background: var(--surface); border: 1px solid var(--hair);
+            border-radius: 8px; padding: 8px 10px; font-size: 12px; color: var(--ink-2); display: grid; gap: 3px; }
+  #legend span.k { display: inline-flex; gap: 7px; align-items: center; }
+  .sw { width: 11px; height: 11px; display: inline-block; flex: none; }
+  .hint { position: absolute; right: 12px; bottom: 12px; font-size: 12px; color: var(--muted); }
+  aside { border-left: 1px solid var(--hair); background: var(--page); display: flex; flex-direction: column; min-height: 0; }
+  .tabs { display: flex; border-bottom: 1px solid var(--hair); }
+  .tabs button { border: 0; border-radius: 0; background: none; padding: 9px 14px; color: var(--ink-2);
+                 border-bottom: 2px solid transparent; }
+  .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+  .pane { padding: 14px 16px; overflow: auto; flex: 1; min-height: 0; }
+  .pane h2 { font-size: 16px; margin: 0 0 4px; }
+  .pane h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 16px 0 6px; }
+  .tag { font-size: 11px; color: var(--ink-2); border: 1px solid var(--hair); border-radius: 4px; padding: 0 5px; white-space: nowrap; }
+  .iri { font-size: 11px; color: var(--muted); word-break: break-all; }
+  .row { display: flex; gap: 6px; align-items: baseline; padding: 3px 0; flex-wrap: wrap; }
+  .row a { color: var(--ink); text-decoration: none; border-bottom: 1px dotted var(--muted); cursor: pointer; }
+  .row .pred { color: var(--ink-2); font-size: 12px; min-width: 7.5em; }
+  .quote { border-left: 2px solid var(--hair); padding: 2px 8px; margin: 6px 0; color: var(--ink-2); font-size: 13px; }
+  textarea { width: 100%; min-height: 180px; font: 12px/1.4 ui-monospace, Menlo, monospace; }
+  .tbl-wrap { overflow: auto; margin-top: 10px; }
+  table { border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  th { color: var(--ink-2); font-weight: 600; }
+  .err { color: #d03b3b; white-space: pre-wrap; font-size: 12px; }
+  .muted { color: var(--muted); }
+  .hubs { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 6px; }
+  .hubs .row { padding: 0; }
+  @media (max-width: 760px) {
+    main { grid-template-columns: 1fr; grid-template-rows: 55vh auto; }
+    aside { border-left: 0; border-top: 1px solid var(--hair); }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>EIS Graph</h1>
+  <span class="stat" id="stat"></span>
+  <span class="grow"></span>
+  <div class="search"><input id="q" type="search" placeholder="Search entities…" autocomplete="off"><div id="results" hidden></div></div>
+  <label class="stat">Entities shared by <select id="minDocs"><option>2</option><option selected>3</option><option>4</option><option>6</option></select>
+    to <select id="maxDocs"><option>8</option><option>10</option><option selected>15</option><option>25</option><option value="999">all</option></select> EISs</label>
+  <button id="overview">Overview</button>
+  <button id="theme" title="Toggle theme">◐</button>
+</header>
+<main>
+  <div id="cy-wrap">
+    <div id="cy"></div>
+    <div id="legend"></div>
+    <div class="hint">click: details · double-click: expand · drag to arrange</div>
+  </div>
+  <aside>
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-pane="p-node">Details</button>
+      <button role="tab" aria-selected="false" data-pane="p-sparql">SPARQL</button>
+      <button role="tab" aria-selected="false" data-pane="p-stats">Stats</button>
+    </div>
+    <div class="pane" id="p-node"></div>
+    <div class="pane" id="p-sparql" hidden>
+      <textarea id="sparql" spellcheck="false"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">
+        <button id="run">Run</button>
+        <select id="examples"><option value="">Examples…</option></select>
+        <span class="muted" style="font-size:12px">default graph = union of all EIS graphs</span>
+      </div>
+      <div id="sparql-out"></div>
+    </div>
+    <div class="pane" id="p-stats" hidden></div>
+  </aside>
+</main>
+<script>
+const NS = "https://example.org/eis/";
+const FAMILY = {
+  EISDocument: "document", Document: "document",
+  Agency: "actor", Organization: "actor", Person: "actor",
+  Location: "place", Waterbody: "place",
+  Project: "action", Alternative: "action", Facility: "action",
+  Statute: "legal", Permit: "legal",
+  Species: "nature", Habitat: "nature", ResourceTopic: "nature", Pollutant: "nature",
+  Impact: "effect", MitigationMeasure: "effect",
+};
+// Shape is the secondary encoding: seven families exceed the all-pairs-safe colour count.
+const SHAPE = { document: "round-rectangle", actor: "ellipse", place: "hexagon", action: "diamond",
+                legal: "rectangle", nature: "star", effect: "triangle" };
+const FAMILY_LABEL = { document: "EIS / document", actor: "Agency · org · person", place: "Place · waterbody",
+  action: "Project · alternative · facility", legal: "Statute · permit", nature: "Species · habitat · resource · pollutant",
+  effect: "Impact · mitigation" };
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const famOf = t => FAMILY[t] || "document";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const api = async (path, opts) => { const r = await fetch(path, opts); const j = await r.json(); if (!r.ok) throw new Error(j.error); return j; };
+
+let cy;
+function style() {
+  return [
+    { selector: "node", style: {
+        "background-color": n => css("--f-" + famOf(n.data("type"))),
+        "shape": n => SHAPE[famOf(n.data("type"))],
+        "width": "data(size)", "height": "data(size)",
+        "border-width": 2, "border-color": css("--surface"),
+        "label": "data(short)", "font-size": 10, "color": css("--ink-2"),
+        "text-opacity": n => n.data("showLabel") ? 1 : 0,
+        "text-outline-color": css("--surface"), "text-outline-width": 2.5,
+        "text-valign": "bottom", "text-margin-y": 3, "text-wrap": "ellipsis", "text-max-width": 150,
+        "min-zoomed-font-size": 7 } },
+    { selector: "node[type = 'EISDocument']", style: { "font-weight": 600, "color": css("--ink"), "font-size": 11 } },
+    { selector: "node.lab, node:selected", style: { "text-opacity": 1, "label": "data(label)", "z-index": 10 } },
+    { selector: "node:selected", style: { "border-color": css("--hl"), "border-width": 3 } },
+    { selector: "edge", style: {
+        "width": 1, "line-color": css("--edge"), "curve-style": "bezier", "opacity": 0.7,
+        "target-arrow-shape": "triangle", "target-arrow-color": css("--edge"), "arrow-scale": 0.6 } },
+    { selector: "edge[predicate = 'mentions']", style: { "target-arrow-shape": "none", "opacity": 0.35 } },
+    { selector: "edge.doclink", style: { "width": 2.5, "line-color": css("--f-document"), "target-arrow-color": css("--f-document"),
+        "opacity": 0.9, "label": "data(predicate)", "font-size": 9, "color": css("--ink-2"), "text-rotation": "autorotate" } },
+    { selector: "edge:selected", style: { "line-color": css("--hl"), "target-arrow-color": css("--hl"), "opacity": 1,
+        "label": "data(predicate)", "font-size": 9, "color": css("--ink") } },
+    { selector: ".faded", style: { "opacity": 0.12 } },
+  ];
+}
+
+function sizeFor(d) {
+  if (d.type === "EISDocument") return 24;
+  return d.docs ? 8 + 4 * Math.sqrt(d.docs) : 14;
+}
+
+// barcode -> short EIS title, for node labels and "source EIS" tags
+const DOCS = {};
+const shortDoc = l => l.replace(/^[^:]*:\s*/, "").replace(/\s*\[\d+\]$/, "");
+const trunc = (s, n) => s.length > n ? s.slice(0, n - 1) + "…" : s;
+const docTag = bc => bc === "entities" ? "" : DOCS[bc] ? `<span class="tag" title="${esc(bc)}">${esc(trunc(DOCS[bc], 34))}</span>`
+                              : `<span class="tag">${esc(bc)}</span>`;
+
+function addElements(nodes, edges) {
+  const add = [];
+  for (const n of nodes) if (!cy.getElementById(n.id).length)
+    add.push({ group: "nodes", data: { ...n, size: sizeFor(n),
+      short: n.type === "EISDocument" ? trunc(shortDoc(n.label), 30) : trunc(n.label, 30),
+      showLabel: n.type === "EISDocument" || (n.docs || 0) >= 10 } });
+  cy.add(add);
+  const eadd = [];
+  for (const e of edges) {
+    const id = e.source + "|" + e.predicate + "|" + e.target;
+    if (cy.getElementById(id).length || !cy.getElementById(e.source).length || !cy.getElementById(e.target).length) continue;
+    eadd.push({ group: "edges", data: { id, ...e }, classes: e.doclink ? "doclink" : "" });
+  }
+  return cy.add(eadd);
+}
+
+async function loadOverview() {
+  const data = await api(`/api/overview?min_docs=${$("#minDocs").value}&max_docs=${$("#maxDocs").value}&max=150`);
+  cy.elements().remove();
+  for (const n of data.nodes) if (n.type === "EISDocument") DOCS[n.id.split("/").pop()] = shortDoc(n.label);
+  data.edges.forEach(e => e.doclink = e.predicate !== "mentions");
+  addElements(data.nodes, data.edges);
+  cy.layout({ name: "fcose", quality: "proof", animate: false, randomize: true, packComponents: true,
+              nodeRepulsion: () => 30000, idealEdgeLength: () => 140, edgeElasticity: () => 0.2,
+              gravity: 0.15, gravityRange: 5, nodeSeparation: 90, numIter: 5000 }).run();
+  cy.fit(undefined, 30);
+  showIntro(data);
+}
+
+async function expand(iri) {
+  const d = await api(`/api/node?iri=${encodeURIComponent(iri)}`);
+  const center = cy.getElementById(iri);
+  const pos = center.length ? center.position() : { x: 0, y: 0 };
+  const nodes = [], edges = [];
+  for (const e of d.edges) {
+    if (e.predicate === "sameAs" || e.predicate === "type") continue;
+    const other = e.source === iri ? { id: e.target, label: e.target_label, type: e.target_type }
+                                   : { id: e.source, label: e.source_label, type: e.source_type };
+    if (!other.type) continue;  // literal-ish or untyped targets
+    nodes.push(other);
+    edges.push({ source: e.source, target: e.target, predicate: e.predicate, doc: e.doc, p_iri: e.p_iri,
+                 doclink: e.doc === "doclinks" });
+  }
+  const before = new Set(cy.nodes().map(n => n.id()));
+  const added = addElements(nodes, edges);
+  const fresh = cy.nodes().filter(n => !before.has(n.id()));
+  fresh.forEach((n, i) => {
+    const a = (2 * Math.PI * i) / Math.max(fresh.length, 1), r = 90 + 4 * fresh.length;
+    n.position({ x: pos.x + r * Math.cos(a), y: pos.y + r * Math.sin(a) });
+  });
+  if (fresh.length) cy.layout({ name: "fcose", animate: true, animationDuration: 400, randomize: false, fit: false,
+                                nodeRepulsion: () => 12000, idealEdgeLength: () => 90 }).run();
+  return d;
+}
+
+function showIntro(data) {
+  const ents = data.nodes.filter(n => n.type !== "EISDocument").length;
+  const hub = h => `<div class="row"><span class="sw" style="background:${css("--f-" + famOf(h.type))}"></span>` +
+    `<a data-iri="${esc(h.id)}">${esc(h.label)}</a> <span class="muted">${h.docs}</span></div>`;
+  $("#p-node").innerHTML = `<p class="muted">Every sampled EIS (blue squares) and the ${ents} entities shared by
+    ${$("#minDocs").value}–${$("#maxDocs").value === "999" ? "all" : $("#maxDocs").value} of them. Shared entities are what tie
+    the EISs together. Hover to see labels, click for details and evidence, and double-click to pull in a node's neighbours.</p>` +
+    (data.hubs.length ? `<h3>Hidden hubs · in more EISs than the cutoff</h3><p class="muted" style="margin:0">These link
+      nearly every EIS, so drawing them hides the structure. Click one to explore it.</p>
+      <div class="hubs">${data.hubs.map(hub).join("")}</div>` : "");
+}
+
+const groupBy = (xs, f) => xs.reduce((m, x) => ((m[f(x)] ||= []).push(x), m), {});
+
+async function showNode(iri) {
+  showTab("p-node");
+  const pane = $("#p-node");
+  pane.innerHTML = '<p class="muted">Loading…</p>';
+  const d = await api(`/api/node?iri=${encodeURIComponent(iri)}`);
+  const n = cy.getElementById(iri);
+  const lab = d.literals.find(l => l.p === "label");
+  const label = lab ? lab.v : n.length ? n.data("label") : iri;
+  const lits = d.literals.filter(l => l.p !== "label");
+  const out = d.edges.filter(e => e.source === iri && e.predicate !== "type");
+  const inc = d.edges.filter(e => e.target === iri);
+  const link = (id, lab, type) => `<span class="sw" style="background:${css("--f-" + famOf(type))}"></span>` +
+    `<a data-iri="${esc(id)}">${esc(lab)}</a>`;
+  const edgeRow = (e, dir) => {
+    const [id, lab, type] = dir === "out" ? [e.target, e.target_label, e.target_type] : [e.source, e.source_label, e.source_type];
+    const ev = `data-s="${esc(e.source)}" data-p="${esc(e.p_iri)}" data-o="${esc(e.target)}"`;
+    return `<div class="row">${link(id, lab, type)} ${docTag(e.doc)}` +
+           (e.predicate !== "mentions" ? ` <a class="tag ev" ${ev}>evidence</a>` : "") + `</div>`;
+  };
+  const section = (title, edges, dir) => {
+    const g = groupBy(edges, e => e.predicate);
+    return Object.keys(g).length ? `<h3>${title}</h3>` + Object.entries(g).map(([p, es]) =>
+      `<div class="row"><span class="pred">${esc(p)}</span><span class="muted">${es.length}</span></div>` +
+      es.slice(0, 40).map(e => edgeRow(e, dir)).join("") + (es.length > 40 ? `<div class="muted">+${es.length - 40} more</div>` : "")
+    ).join("") : "";
+  };
+  pane.innerHTML = `<h2>${esc(label)}</h2>
+    <div class="row">${d.types.filter(t => FAMILY[t]).map(t => `<span class="tag">${esc(t)}</span>`).join(" ")}</div>
+    <div class="iri">${esc(iri)}</div>
+    <div style="margin-top:8px"><button id="expand">Expand neighbours</button></div>
+    ${lits.length ? "<h3>Attributes</h3>" + lits.map(l => `<div class="row"><span class="pred">${esc(l.p)}</span>${esc(l.v)} ${docTag(l.doc)}</div>`).join("") : ""}
+    ${section("Outgoing", out, "out")}
+    ${section("Incoming", inc, "in")}
+    <div id="evidence"></div>`;
+  $("#expand").onclick = () => expand(iri);
+}
+
+async function showEvidence(s, p, o, target) {
+  const ev = await api(`/api/evidence?s=${encodeURIComponent(s)}&p=${encodeURIComponent(p)}&o=${encodeURIComponent(o)}`);
+  target.innerHTML = `<h3>Evidence · ${esc(p.split("/").pop())}</h3>` + (ev.length ? ev.map(e =>
+    `<div class="quote">“${esc(e.quote)}”${e.note ? ` <em>(${esc(e.note)})</em>` : ""}<br>${docTag(e.doc)}${e.chunk !== undefined ? ` <span class="muted" style="font-size:11px">chunk ${e.chunk}</span>` : ""}</div>`
+  ).join("") : '<p class="muted">No quote recorded.</p>');
+  target.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function showTab(id) {
+  document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.pane === id));
+  document.querySelectorAll(".pane").forEach(p => p.hidden = p.id !== id);
+}
+
+const EXAMPLES = {
+  "Agencies leading the most EISs": `SELECT ?agency (COUNT(DISTINCT ?doc) AS ?eiss) WHERE {
+  GRAPH ?g { ?project eis:leadAgency ?a }
+  ?a rdfs:label ?agency .
+  BIND(IRI(REPLACE(STR(?g), "graph/doc/", "doc/")) AS ?doc)
+} GROUP BY ?agency ORDER BY DESC(?eiss) LIMIT 25`,
+  "Species affected, with listing status": `SELECT ?species (SAMPLE(?status) AS ?listing) (COUNT(DISTINCT ?g) AS ?eiss) WHERE {
+  ?s a eis:Species ; rdfs:label ?species .
+  GRAPH ?g { ?x eis:affects|eis:impactOn ?s }
+  OPTIONAL { ?s eis:listingStatus ?status }
+} GROUP BY ?species ORDER BY DESC(?eiss) LIMIT 50`,
+  "Significant adverse impacts": `SELECT ?impact ?on ?sig ?g WHERE {
+  GRAPH ?g { ?i a ?t ; eis:significance ?sig . OPTIONAL { ?i eis:impactOn ?o } }
+  ?i rdfs:label ?impact . OPTIONAL { ?o rdfs:label ?on }
+  FILTER(?sig IN ("significant", "major"))
+} LIMIT 200`,
+  "Document-to-document links": `SELECT ?a ?p ?b WHERE {
+  GRAPH <https://example.org/eis/id/graph/doclinks> { ?x ?p ?y FILTER(?p != owl:sameAs) }
+  ?x rdfs:label ?a . ?y rdfs:label ?b
+}`,
+  "Statutes cited across most EISs": `SELECT ?statute (COUNT(DISTINCT ?g) AS ?eiss) WHERE {
+  ?s a eis:Statute ; rdfs:label ?statute .
+  GRAPH ?g { ?d eis:mentions ?s }
+} GROUP BY ?statute ORDER BY DESC(?eiss) LIMIT 30`,
+};
+
+async function runSparql() {
+  const out = $("#sparql-out");
+  out.innerHTML = '<p class="muted">Running…</p>';
+  try {
+    const r = await api("/api/sparql", { method: "POST", body: JSON.stringify({ query: $("#sparql").value }) });
+    if ("boolean" in r) { out.innerHTML = `<p>${r.boolean}</p>`; return; }
+    const cell = v => !v ? "" : v.type === "uri"
+      ? `<a data-iri="${esc(v.value)}" style="cursor:pointer;color:inherit">${esc(v.value.replace("https://example.org/eis/id/", "id:"))}</a>` : esc(v.value);
+    out.innerHTML = `<p class="muted">${r.rows.length} rows${r.truncated ? " (truncated)" : ""}</p><div class="tbl-wrap"><table>
+      <tr>${r.vars.map(v => `<th>${esc(v)}</th>`).join("")}</tr>
+      ${r.rows.map(row => `<tr>${r.vars.map(v => `<td>${cell(row[v])}</td>`).join("")}</tr>`).join("")}</table></div>`;
+  } catch (e) { out.innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+}
+
+async function focusIri(iri) {
+  if (!cy.getElementById(iri).length) {
+    const d = await api(`/api/node?iri=${encodeURIComponent(iri)}`);
+    const t = d.types.find(t => FAMILY[t]) || "Document";
+    const lab = d.literals.find(l => l.p === "label");
+    const n = cy.add({ group: "nodes", data: { id: iri, label: lab ? lab.v : iri.split("/").pop(), type: t, size: 18 } });
+    n.position({ x: cy.extent().x1 + cy.extent().w / 2, y: cy.extent().y1 + cy.extent().h / 2 });
+    await expand(iri);
+  }
+  const n = cy.getElementById(iri);
+  cy.elements().unselect(); n.select();
+  cy.animate({ center: { eles: n }, duration: 300 });
+  showNode(iri);
+}
+
+function init() {
+  cy = cytoscape({ container: $("#cy"), style: style(), wheelSensitivity: 0.3, minZoom: 0.1, maxZoom: 4 });
+  cy.on("tap", "node", e => showNode(e.target.id()));
+  cy.on("dbltap", "node", e => expand(e.target.id()));
+  cy.on("tap", "edge", e => {
+    const d = e.target.data(); showTab("p-node");
+    if (d.predicate === "mentions") return;
+    showEvidence(d.source, d.p_iri || NS + d.predicate, d.target, $("#p-node"));
+  });
+  cy.on("mouseover", "node", e => {
+    const nb = e.target.closedNeighborhood();
+    cy.elements().not(nb).addClass("faded"); nb.nodes().addClass("lab");
+  });
+  cy.on("mouseout", "node", () => { cy.elements().removeClass("faded"); cy.nodes().removeClass("lab"); });
+
+  $("#legend").innerHTML = Object.entries(FAMILY_LABEL).map(([f, l]) =>
+    `<span class="k"><svg class="sw" viewBox="0 0 12 12">${shapeSvg(f)}</svg>${l}</span>`).join("");
+  $("#overview").onclick = loadOverview;
+  $("#minDocs").onchange = loadOverview;
+  $("#maxDocs").onchange = loadOverview;
+  $("#theme").onclick = () => {
+    const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+    const cur = document.documentElement.dataset.theme || (dark ? "dark" : "light");
+    document.documentElement.dataset.theme = cur === "dark" ? "light" : "dark";
+    cy.style(style());
+    $("#legend").innerHTML = Object.entries(FAMILY_LABEL).map(([f, l]) =>
+      `<span class="k"><svg class="sw" viewBox="0 0 12 12">${shapeSvg(f)}</svg>${l}</span>`).join("");
+  };
+  document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => showTab(b.dataset.pane));
+  document.body.addEventListener("click", e => {
+    const a = e.target.closest("a[data-iri]"); if (a) { focusIri(a.dataset.iri); return; }
+    const ev = e.target.closest("a.ev"); if (ev) showEvidence(ev.dataset.s, ev.dataset.p, ev.dataset.o, $("#evidence"));
+  });
+
+  let t;
+  $("#q").oninput = () => { clearTimeout(t); t = setTimeout(async () => {
+    const q = $("#q").value.trim(), box = $("#results");
+    if (q.length < 2) { box.hidden = true; return; }
+    const rs = await api(`/api/search?q=${encodeURIComponent(q)}`);
+    box.innerHTML = rs.map(r => { const ty = r.t.split("/").pop();
+      return `<div data-iri="${esc(r.e)}"><span class="sw" style="background:${css("--f-" + famOf(ty))}"></span>${esc(r.l)} <span class="tag">${esc(ty)}</span></div>`; }).join("")
+      || '<div class="muted">No matches</div>';
+    box.hidden = false;
+  }, 200); };
+  $("#results").onclick = e => { const d = e.target.closest("[data-iri]"); if (d) { $("#results").hidden = true; focusIri(d.dataset.iri); } };
+  document.addEventListener("click", e => { if (!e.target.closest(".search")) $("#results").hidden = true; });
+
+  const ex = $("#examples");
+  for (const k of Object.keys(EXAMPLES)) ex.add(new Option(k, k));
+  ex.onchange = () => { if (ex.value) { $("#sparql").value = EXAMPLES[ex.value]; runSparql(); } };
+  $("#sparql").value = EXAMPLES["Agencies leading the most EISs"];
+  $("#run").onclick = runSparql;
+  $("#sparql").onkeydown = e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) runSparql(); };
+
+  api("/api/stats").then(s => {
+    $("#stat").textContent = `${s.quads.toLocaleString()} quads · ${(s.classes.EISDocument || 0)} EISs`;
+    $("#p-stats").innerHTML = "<h3>Entities by class</h3><table>" + Object.entries(s.classes).map(([c, n]) =>
+      `<tr><td><span class="sw" style="background:${css("--f-" + famOf(c))}"></span> ${esc(c)}</td><td style="text-align:right">${n.toLocaleString()}</td></tr>`).join("") +
+      `</table><h3>Triples with evidence quotes</h3><p>${s.evidence_triples.toLocaleString()}</p>`;
+  });
+  loadOverview();
+}
+
+function shapeSvg(f) {
+  const c = css("--f-" + f);
+  return {
+    document: `<rect x="1" y="1" width="10" height="10" rx="2.5" fill="${c}"/>`,
+    actor: `<circle cx="6" cy="6" r="5" fill="${c}"/>`,
+    place: `<polygon points="3,1 9,1 12,6 9,11 3,11 0,6" fill="${c}"/>`,
+    action: `<polygon points="6,0 12,6 6,12 0,6" fill="${c}"/>`,
+    legal: `<rect x="1" y="1" width="10" height="10" fill="${c}"/>`,
+    nature: `<polygon points="6,0 7.6,4.2 12,4.4 8.5,7.1 9.7,11.5 6,9 2.3,11.5 3.5,7.1 0,4.4 4.4,4.2" fill="${c}"/>`,
+    effect: `<polygon points="6,0.5 11.5,11 0.5,11" fill="${c}"/>`,
+  }[f];
+}
+
+init();
+</script>
+</body>
+</html>

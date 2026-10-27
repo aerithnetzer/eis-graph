@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "eis-graph": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "--project",
+        "/home/aerithn/Projects/eis-graph",
+        "eisgraph-mcp",
+        "--data",
+        "full"
+      ]
+    }
+  }
+}

@@ -1,0 +1,22 @@
+[project]
+name = "eis-graph"
+version = "0.1.0"
+description = "Test RDF knowledge graph of 50 sampled EISs, extracted with Claude Message Batches"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic[bedrock]>=2.2.0",
+    "mcp>=2.3.0",
+    "pyoxigraph>=0.5.13",
+]
+
+[project.scripts]
+eisgraph = "eisgraph.cli:main"
+eisgraph-mcp = "eisgraph.mcp_server:main"
+
+[build-system]
+requires = ["uv_build>=0.9,<1"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "eisgraph"
+module-root = ""

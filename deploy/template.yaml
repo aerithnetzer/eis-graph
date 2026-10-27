@@ -1,0 +1,96 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  EIS knowledge-graph MCP server: one arm64 Lambda behind a function URL, API-key protected. Nothing here bills
+  while idle: no API Gateway, no provisioned concurrency, no VPC, no secrets service.
+
+Parameters:
+  CodeBucket:
+    Type: String
+  CodeKey:
+    Type: String
+  ApiKeysParam:
+    Type: String
+    Default: /eis-graph/mcp/api-keys
+    Description: SSM SecureString holding the API key digests (maintained by deploy/keys.sh, not this stack).
+  MaxConcurrency:
+    Type: Number
+    Default: 10
+    Description: Reserved concurrency, used as a ceiling on simultaneous instances (and so on cost). Free.
+
+Resources:
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: read-api-keys
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ApiKeysParam}"
+
+  Logs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/eis-graph-mcp
+      RetentionInDays: 14
+
+  Function:
+    Type: AWS::Lambda::Function
+    DependsOn: Logs
+    Properties:
+      FunctionName: eis-graph-mcp
+      Description: EIS knowledge-graph MCP server (read-only)
+      Runtime: python3.12
+      Architectures: [arm64]
+      Handler: run.sh
+      MemorySize: 1024
+      Timeout: 30
+      ReservedConcurrentExecutions: !Ref MaxConcurrency
+      Role: !GetAtt Role.Arn
+      Code:
+        S3Bucket: !Ref CodeBucket
+        S3Key: !Ref CodeKey
+      Layers:
+        - arn:aws:lambda:us-east-2:753240598075:layer:LambdaAdapterLayerArm64:30
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+          PORT: "8080"
+          EISGRAPH_GRAPH_DIR: /var/task/graph
+          EISGRAPH_API_KEYS_PARAM: !Ref ApiKeysParam
+
+  Url:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !Ref Function
+      AuthType: NONE  # authentication is the API key, checked in the app
+
+  UrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Function
+      Action: lambda:InvokeFunctionUrl
+      Principal: "*"
+      FunctionUrlAuthType: NONE
+
+  UrlInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Function
+      Action: lambda:InvokeFunction
+      Principal: "*"
+      InvokedViaFunctionUrl: true
+
+Outputs:
+  McpUrl:
+    Value: !Sub "${Url.FunctionUrl}mcp"
