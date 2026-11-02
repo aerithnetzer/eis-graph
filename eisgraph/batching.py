@@ -145,7 +145,10 @@ def run_bedrock(requests: list[dict], out_dir: Path, budget: float | None = None
 
 def bedrock_client(model: str) -> anthropic.AsyncAnthropicBedrock:
     # Picks up AWS_BEARER_TOKEN_BEDROCK from the environment.
-    return anthropic.AsyncAnthropicBedrock(aws_region=BEDROCK_REGION, max_retries=8)
+    # A healthy stream sends events (at least pings) every few seconds; a read gap of 3 minutes means the
+    # connection is dead (e.g. after a network drop) and the request should be retried, not waited on for hours.
+    return anthropic.AsyncAnthropicBedrock(aws_region=BEDROCK_REGION, max_retries=8,
+                                           timeout=anthropic.Timeout(600.0, connect=15.0, read=180.0))
 
 
 async def call_bedrock(client: anthropic.AsyncAnthropicBedrock, r: dict, out_dir: Path, usage: dict,

@@ -62,9 +62,23 @@ def build(raw_dir: Path, work_dir: Path, out_dir: Path) -> Store:
     # Candidate id -> canonical (label, cluster id) after Claude's resolution clusters.
     canon = {c["id"]: c["id"] for c in cands}
     canon_label = {c["id"]: c["label"] for c in cands}
-    for f in sorted((work_dir / "link").glob("resolve__*.json")):
+    # Linking results: subagent output (link_agent/) when present, else the Bedrock runner's (link/).
+    link_dir = work_dir / "link_agent" if any((work_dir / "link_agent").glob("*.json")) else work_dir / "link"
+    eid_to_cand = {m: c["id"] for c in cands for m in c["members"]}
+    # Link results refer to candidate ids, which prepare-link renumbers whenever documents are added. If the
+    # candidate list they were made against is frozen beside them (_candidates.json), translate old ids to the
+    # current ones through the candidates' member entity ids, which are stable.
+    frozen = link_dir / "_candidates.json"
+    old_members = {c["id"]: c["members"] for c in json.loads(frozen.read_text())} if frozen.exists() else None
+
+    def xlate(i: int) -> int | None:
+        if old_members is None:
+            return i
+        return next((eid_to_cand[m] for m in old_members.get(i, []) if m in eid_to_cand), None)
+
+    for f in sorted(link_dir.glob("resolve__*.json")):
         for cl in json.loads(f.read_text())["clusters"]:
-            ids = [i for i in cl["member_ids"] if i in canon]
+            ids = [j for j in (xlate(i) for i in cl["member_ids"]) if j in canon]
             if len(ids) < 2:
                 continue
             heads = {canon[i] for i in ids}
@@ -73,7 +87,6 @@ def build(raw_dir: Path, work_dir: Path, out_dir: Path) -> Store:
                 if canon[i] in heads:
                     canon[i] = head
             canon_label[head] = cl["canonical_label"]
-    eid_to_cand = {m: c["id"] for c in cands for m in c["members"]}
 
     def entity_uri(barcode: str, eid: str) -> NamedNode:
         e = per_doc[barcode][eid]
@@ -144,15 +157,19 @@ def build(raw_dir: Path, work_dir: Path, out_dir: Path) -> Store:
 
     by_id = {c["id"]: c for c in cands}
     # One file per source document (doclinks__<barcode>.json); a single doclinks.json from older runs also matches.
-    for links_file in sorted((work_dir / "link").glob("doclinks*.json")):
-        links = json.loads(links_file.read_text())
+    for links_file in sorted(link_dir.glob("doclinks*.json")):
+        try:
+            links = json.loads(links_file.read_text())
+        except json.JSONDecodeError:  # a linking run may be writing it right now
+            print(f"skipping unreadable {links_file.name}")
+            continue
         for ln in links["links"]:
             if ln["source"] in profiles and ln["target"] in profiles and ln["source"] != ln["target"]:
                 s, p, o = doc_uri(ln["source"]), eis(ln["predicate"]), doc_uri(ln["target"])
                 add(s, p, o, G_LINKS)
                 evidence[f"{s.value} {p.value} {o.value}"].append({"doc": "doclinks", "quote": ln["rationale"]})
         for m in links["reference_matches"]:
-            c = by_id.get(m["ref_id"])
+            c = by_id.get(xlate(m["ref_id"]))
             if c and m["barcode"] in profiles:
                 head = canon[c["id"]]
                 add(NamedNode(DATA + f"Document/{slug(canon_label[head])}"), SAME_AS, doc_uri(m["barcode"]), G_LINKS)

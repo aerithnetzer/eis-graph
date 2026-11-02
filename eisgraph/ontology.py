@@ -222,7 +222,11 @@ You get a numbered list of entity names of one type, gathered from many document
 Group ids that refer to the same real-world entity: acronyms vs full names, OCR misspellings, name variants,
 sub-unit vs parent ONLY if the names are truly the same body (do NOT merge "USDA Forest Service" with
 "Tonto National Forest"; do NOT merge different Sections of a statute). Pick the most complete official name as
-canonical_label. Return only clusters with 2 or more members; singletons are implied."""
+canonical_label. Return only clusters with 2 or more members; singletons are implied.
+Merge only names for the SAME thing. Do not merge a broader term with a narrower one ("Total coliform" vs "Fecal
+coliform"; "Arkansas River system" vs "Arkansas River" is fine only if the documents plainly mean the river), a
+substance with a measurement or condition of it ("Dissolved oxygen" vs "Oxygen depletion"), or two related but
+distinct things ("Asbestos" vs "taconite tailings fibers"). When unsure, leave them apart."""
 
 DOC_LINK_SYSTEM = f"""You relate U.S. Environmental Impact Statements to each other for a knowledge graph.
 You get the profile of one source EIS (barcode, stage, agencies, projects, places, referenced documents) and a few

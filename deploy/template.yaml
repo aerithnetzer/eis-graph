@@ -12,6 +12,12 @@ Parameters:
     Type: String
     Default: /eis-graph/mcp/api-keys
     Description: SSM SecureString holding the API key digests (maintained by deploy/keys.sh, not this stack).
+  GraphBucket:
+    Type: String
+    Description: Private bucket holding the graph (build-serving output), copied to /tmp at cold start.
+  GraphPrefix:
+    Type: String
+    Description: Content-addressed prefix in GraphBucket, e.g. deploy/serving-<hash>.
   MaxConcurrency:
     Type: Number
     Default: 10
@@ -37,6 +43,19 @@ Resources:
               - Effect: Allow
                 Action: ssm:GetParameter
                 Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ApiKeysParam}"
+        - PolicyName: read-graph
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub "arn:aws:s3:::${GraphBucket}/${GraphPrefix}/*"
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !Sub "arn:aws:s3:::${GraphBucket}"
+                Condition:
+                  StringLike:
+                    s3:prefix: !Sub "${GraphPrefix}/*"
 
   Logs:
     Type: AWS::Logs::LogGroup
@@ -55,6 +74,8 @@ Resources:
       Handler: run.sh
       MemorySize: 1024
       Timeout: 30
+      EphemeralStorage:
+        Size: 1024  # /tmp for the graph copy; billed only while running, at a negligible per-GB-second rate
       ReservedConcurrentExecutions: !Ref MaxConcurrency
       Role: !GetAtt Role.Arn
       Code:
@@ -66,7 +87,7 @@ Resources:
         Variables:
           AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
           PORT: "8080"
-          EISGRAPH_GRAPH_DIR: /var/task/graph
+          EISGRAPH_GRAPH_S3: !Sub "s3://${GraphBucket}/${GraphPrefix}/"
           EISGRAPH_API_KEYS_PARAM: !Ref ApiKeysParam
 
   Url:

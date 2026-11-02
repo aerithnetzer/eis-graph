@@ -5,7 +5,8 @@ Run:  uv run eisgraph-mcp                      # stdio (Claude Code, Claude Desk
       add --data full to serve data/full/graph (the extract-all corpus) instead of the 50-doc sample
 
 Deployed (AWS Lambda behind a function URL, see deploy/): `eisgraph-mcp --deployed` serves stateless JSON-response
-streamable HTTP on $PORT, reading EISGRAPH_GRAPH_DIR (a build-serving directory) and requiring one of the API keys
+streamable HTTP on $PORT, reading the build-serving directory EISGRAPH_GRAPH_DIR (or copying it at start-up from
+EISGRAPH_GRAPH_S3, s3://bucket/prefix/, when it's too big for the Lambda zip) and requiring one of the API keys
 listed in Parameter Store (EISGRAPH_API_KEYS_PARAM; see ApiKeys and deploy/keys.sh); clients send
 `Authorization: Bearer <key>` or `x-api-key: <key>`.
 """
@@ -278,10 +279,43 @@ def require_api_key(app, keys: ApiKeys):
     return guarded
 
 
+def fetch_graph(uri: str) -> Path:
+    """Copy a build-serving directory from s3://bucket/prefix/ to local disk (once per Lambda instance) and return
+    its path. The prefix is content-addressed by deploy/deploy.sh, so a present directory is never stale."""
+    import boto3
+    from concurrent.futures import ThreadPoolExecutor
+
+    bucket, _, prefix = uri.removeprefix("s3://").partition("/")
+    prefix = prefix.rstrip("/") + "/"
+    dest = Path(os.environ.get("EISGRAPH_GRAPH_CACHE", "/tmp/graph")) / prefix.strip("/").replace("/", "_")
+    if (dest / ".complete").exists():
+        return dest
+    s3 = boto3.client("s3")
+    keys = [o["Key"] for page in s3.get_paginator("list_objects_v2").paginate(Bucket=bucket, Prefix=prefix)
+            for o in page.get("Contents", [])]
+    if not keys:
+        raise SystemExit(f"no graph files under {uri}")
+
+    def get(key: str) -> None:
+        f = dest / key[len(prefix):]
+        f.parent.mkdir(parents=True, exist_ok=True)
+        s3.download_file(bucket, key, str(f))
+
+    t = time.monotonic()
+    with ThreadPoolExecutor(16) as ex:
+        list(ex.map(get, keys))
+    (dest / ".complete").touch()
+    print(f"fetched {len(keys)} graph files from {uri} in {time.monotonic() - t:.1f}s", file=sys.stderr)
+    return dest
+
+
 def serve_deployed(port: int) -> None:
     import uvicorn
     from mcp.server.transport_security import TransportSecuritySettings
 
+    global GRAPH_DIR
+    if uri := os.environ.get("EISGRAPH_GRAPH_S3"):  # graph too big to ship in the code zip: load it from S3
+        GRAPH_DIR = fetch_graph(uri)
     keys = ApiKeys()
     # Stateless + JSON responses: any Lambda instance can answer any request, and nothing streams.
     # Host checks are for localhost DNS-rebinding; the public function URL is guarded by the API key instead.
