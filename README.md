@@ -44,7 +44,9 @@ Full corpus (all of `p1274`, into `data/full/`): `uv run eisgraph extract-all --
      rarity; `data/work/pairs.json`), then one request per document shows Claude its profile plus its top 8 partners
      and what they share, and Claude asserts only the links that hold. Each unordered pair is judged once.
 - **RDF**: one named graph per EIS (provenance), plus `entities`, `doclinks` and `ontology` graphs. Vocabulary is
-  `https://example.org/eis/`, instances are under `…/eis/id/`. *Local* types (Project, Alternative, Impact,
+  `https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl#` (every term resolves to
+  [`ontology/eis.ttl`](ontology/eis.ttl); regenerate it with `python -m eisgraph.graph ontology`), instances are under
+  `https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/id/`. *Local* types (Project, Alternative, Impact,
   Mitigation, Facility, Permit) are scoped per document; global types share one URI across documents, and those shared
   nodes are what connect the EISs.
 - **Server**: stdlib HTTP + in-memory Oxigraph. The front end is cytoscape.js and has four views:

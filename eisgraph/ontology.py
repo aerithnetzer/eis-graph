@@ -1,7 +1,9 @@
 """The fixed EIS ontology Claude extracts against, plus the JSON schemas for both batch phases."""
 
-NS = "https://example.org/eis/"  # vocabulary namespace (eis:)
-DATA = "https://example.org/eis/id/"  # instance namespace
+REPO_RAW = "https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/"  # public raw files of github.com/aerithnetzer/eis-graph
+NS = REPO_RAW + "ontology/eis.ttl#"  # vocabulary namespace (eis:); every term resolves to the ontology file
+ONTOLOGY_IRI = REPO_RAW + "ontology/eis.ttl"
+DATA = REPO_RAW + "id/"  # instance namespace (id:)
 
 # Entity classes. GLOBAL types get one URI across all documents (merged by canonical label);
 # LOCAL types are scoped to the document that mentions them ("Alternative 2" in doc A != doc B).

@@ -1,0 +1,246 @@
+@prefix eis: <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+eis:description rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "A one-sentence description of the entity." ;
+	rdfs:label "description" ;
+	a owl:DatatypeProperty .
+eis:quantity rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Any measured magnitude with units (acres disturbed, miles, tons/yr, cost in $)." ;
+	rdfs:label "quantity" ;
+	a owl:DatatypeProperty .
+eis:scientificName rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Species: binomial name." ;
+	rdfs:label "scientificName" ;
+	a owl:DatatypeProperty .
+eis:listingStatus rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Species: endangered | threatened | candidate | species of concern | delisted." ;
+	rdfs:label "listingStatus" ;
+	a owl:DatatypeProperty .
+eis:duration rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Impact: short-term | long-term | permanent | temporary." ;
+	rdfs:label "duration" ;
+	a owl:DatatypeProperty .
+eis:direction rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Impact: adverse | beneficial | mixed." ;
+	rdfs:label "direction" ;
+	a owl:DatatypeProperty .
+eis:significance rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Impact: none | negligible | minor | moderate | major | significant | unknown." ;
+	rdfs:label "significance" ;
+	a owl:DatatypeProperty .
+eis:isNoAction rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Alternative: 'true' if it is the No Action alternative." ;
+	rdfs:label "isNoAction" ;
+	a owl:DatatypeProperty .
+eis:isPreferred rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Alternative: 'true' if identified as preferred / proposed action." ;
+	rdfs:label "isPreferred" ;
+	a owl:DatatypeProperty .
+eis:identifier rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "EIS number, CEQ/EPA number, docket, report number, permit number." ;
+	rdfs:label "identifier" ;
+	a owl:DatatypeProperty .
+eis:date rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Publication / decision date (ISO yyyy-mm-dd or yyyy if that's all that's given)." ;
+	rdfs:label "date" ;
+	a owl:DatatypeProperty .
+eis:documentStage rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "THIS_DOCUMENT: Draft, Final, Supplemental Draft, Supplemental Final, Record of Decision, Programmatic." ;
+	rdfs:label "documentStage" ;
+	a owl:DatatypeProperty .
+eis:cumulativeContext rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "B's project is discussed (or would plausibly be) in A's cumulative effects analysis." ;
+	rdfs:label "cumulativeContext" ;
+	a owl:ObjectProperty .
+eis:similarActionType rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "A and B evaluate the same kind of action (e.g. both are highway widenings, both are forest plan revisions)." ;
+	rdfs:label "similarActionType" ;
+	a owl:ObjectProperty .
+eis:sharesGeography rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "A and B analyze overlapping places or watersheds." ;
+	rdfs:label "sharesGeography" ;
+	a owl:ObjectProperty .
+eis:sameProject rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "A and B are different stages/versions of the same project's EIS." ;
+	rdfs:label "sameProject" ;
+	a owl:ObjectProperty .
+eis:relatedTo rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Fallback when no predicate above fits; put the specific relation in `note`." ;
+	rdfs:label "relatedTo" ;
+	a owl:ObjectProperty .
+eis:tiersFrom rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "A tiers from programmatic EIS B." ;
+	rdfs:label "tiersFrom" ;
+	a owl:ObjectProperty .
+eis:supplements rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "A supplements or revises B (same project, later stage)." ;
+	rdfs:label "supplements" ;
+	a owl:ObjectProperty .
+eis:references rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "A explicitly cites B." ;
+	rdfs:label "references" ;
+	a owl:ObjectProperty .
+eis:managedBy rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Location/Facility/Waterbody -> Agency/Organization managing it." ;
+	rdfs:label "managedBy" ;
+	a owl:ObjectProperty .
+eis:consultedWith rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Agency/Project -> Agency/Organization consulted (Section 7, Section 106, tribal consultation)." ;
+	rdfs:label "consultedWith" ;
+	a owl:ObjectProperty .
+eis:authorizedUnder rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Permit -> Statute." ;
+	rdfs:label "authorizedUnder" ;
+	a owl:ObjectProperty .
+eis:issuedBy rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Permit -> Agency that issues it." ;
+	rdfs:label "issuedBy" ;
+	a owl:ObjectProperty .
+eis:requiresPermit rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Project/Alternative -> Permit." ;
+	rdfs:label "requiresPermit" ;
+	a owl:ObjectProperty .
+eis:subjectTo rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Project -> Statute it must comply with." ;
+	rdfs:label "subjectTo" ;
+	a owl:ObjectProperty .
+eis:listedUnder rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Species -> Statute (e.g. ESA) it is protected under." ;
+	rdfs:label "listedUnder" ;
+	a owl:ObjectProperty .
+eis:occursIn rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Species -> Location/Waterbody/Habitat where it occurs." ;
+	rdfs:label "occursIn" ;
+	a owl:ObjectProperty .
+eis:emits rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Project/Facility/Alternative -> Pollutant." ;
+	rdfs:label "emits" ;
+	a owl:ObjectProperty .
+eis:mitigatedBy rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Impact/Project -> MitigationMeasure." ;
+	rdfs:label "mitigatedBy" ;
+	a owl:ObjectProperty .
+eis:impactOn rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Impact -> the Species/Waterbody/Habitat/ResourceTopic/Location it falls on." ;
+	rdfs:label "impactOn" ;
+	a owl:ObjectProperty .
+eis:hasImpact rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Project/Alternative -> Impact." ;
+	rdfs:label "hasImpact" ;
+	a owl:ObjectProperty .
+eis:affects rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Project/Alternative/Facility -> any resource (Waterbody, Species, Habitat, ResourceTopic, Location)." ;
+	rdfs:label "affects" ;
+	a owl:ObjectProperty .
+eis:partOf rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Location/Waterbody/Habitat -> larger Location/Waterbody." ;
+	rdfs:label "partOf" ;
+	a owl:ObjectProperty .
+eis:locatedIn rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Project/Facility/Location/Waterbody -> Location." ;
+	rdfs:label "locatedIn" ;
+	a owl:ObjectProperty .
+eis:includesFacility rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Project/Alternative -> Facility." ;
+	rdfs:label "includesFacility" ;
+	a owl:ObjectProperty .
+eis:hasAlternative rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Project -> Alternative." ;
+	rdfs:label "hasAlternative" ;
+	a owl:ObjectProperty .
+eis:evaluates rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "THIS_DOCUMENT -> Project it analyzes." ;
+	rdfs:label "evaluates" ;
+	a owl:ObjectProperty .
+eis:preparedBy rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "THIS_DOCUMENT -> Organization/Agency/Person that prepared it." ;
+	rdfs:label "preparedBy" ;
+	a owl:ObjectProperty .
+eis:proponent rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Project -> Organization/Agency proposing or applying for the action." ;
+	rdfs:label "proponent" ;
+	a owl:ObjectProperty .
+eis:cooperatingAgency rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Project -> Agency (or Organization/tribe) cooperating on the EIS." ;
+	rdfs:label "cooperatingAgency" ;
+	a owl:ObjectProperty .
+eis:leadAgency rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Project -> Agency leading the NEPA review." ;
+	rdfs:label "leadAgency" ;
+	a owl:ObjectProperty .
+eis:Document rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Another referenced document: prior EIS, EA, ROD, plan, study, Biological Opinion." ;
+	rdfs:label "Document" ;
+	a owl:Class .
+eis:Statute rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "A law, regulation, executive order, or treaty (NEPA, ESA Section 7, Clean Water Act Section 404, EO 12898)." ;
+	rdfs:label "Statute" ;
+	a owl:Class .
+eis:Pollutant rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "A substance or emission (PM2.5, NOx, mercury, greenhouse gases, sediment)." ;
+	rdfs:label "Pollutant" ;
+	a owl:Class .
+eis:ResourceTopic rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "An environmental resource category analyzed (air quality, cultural resources, environmental justice, noise...)." ;
+	rdfs:label "ResourceTopic" ;
+	a owl:Class .
+eis:Habitat rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "A habitat or ecosystem type (e.g. riparian forest, sagebrush steppe, critical habitat)." ;
+	rdfs:label "Habitat" ;
+	a owl:Class .
+eis:Species rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "A plant or animal species or population (use the common name; give scientific name as an attribute)." ;
+	rdfs:label "Species" ;
+	a owl:Class .
+eis:Waterbody rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "A named river, lake, stream, aquifer, bay, wetland complex." ;
+	rdfs:label "Waterbody" ;
+	a owl:Class .
+eis:Location rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "A named place: state, county, city, national forest, park, watershed, region." ;
+	rdfs:label "Location" ;
+	a owl:Class .
+eis:Person rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "A named individual (preparer, responsible official, commenter)." ;
+	rdfs:label "Person" ;
+	a owl:Class .
+eis:Organization rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Non-government organization, company, consultant, tribe-as-organization, utility." ;
+	rdfs:label "Organization" ;
+	a owl:Class .
+eis:Agency rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "A government agency or sub-unit (federal, state, tribal, local)." ;
+	rdfs:label "Agency" ;
+	a owl:Class .
+eis:Permit rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "A permit, license, authorization, or consultation outcome (e.g. Section 404 permit, Biological Opinion)." ;
+	rdfs:label "Permit" ;
+	a owl:Class .
+eis:Facility rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "Built infrastructure: dam, highway segment, pipeline, mine, plant, transmission line." ;
+	rdfs:label "Facility" ;
+	a owl:Class .
+eis:MitigationMeasure rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "A measure to avoid, minimize, or compensate for an impact." ;
+	rdfs:label "MitigationMeasure" ;
+	a owl:Class .
+eis:Impact rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "A specific environmental effect of an alternative or project." ;
+	rdfs:label "Impact" ;
+	a owl:Class .
+eis:Alternative rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "A named alternative, including No Action and the Preferred Alternative." ;
+	rdfs:label "Alternative" ;
+	a owl:Class .
+eis:Project rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "The proposed federal action / project the EIS evaluates." ;
+	rdfs:label "Project" ;
+	a owl:Class .
+eis:EISDocument rdfs:isDefinedBy <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> ;
+	rdfs:comment "An Environmental Impact Statement." ;
+	rdfs:label "EISDocument" ;
+	a owl:Class .
+<https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl> rdfs:comment "Vocabulary for facts extracted from U.S. Environmental Impact Statements. Source: https://github.com/aerithnetzer/eis-graph" ;
+	rdfs:label "EIS knowledge-graph ontology" ;
+	a owl:Ontology .

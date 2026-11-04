@@ -13,10 +13,10 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
-from pyoxigraph import Literal, NamedNode, Quad, RdfFormat, Store
+from pyoxigraph import DefaultGraph, Literal, NamedNode, Quad, RdfFormat, Store
 
 from .link import RESERVED_DOC_KEY, load_extractions, norm
-from .ontology import ATTRIBUTES, CLASSES, DATA, DOC_LINK_PREDICATES, NS, RELATIONS
+from .ontology import ATTRIBUTES, CLASSES, DATA, DOC_LINK_PREDICATES, NS, ONTOLOGY_IRI, RELATIONS
 
 RDF_TYPE = NamedNode("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
 RDFS = "http://www.w3.org/2000/01/rdf-schema#"
@@ -49,6 +49,33 @@ def eis(term: str) -> NamedNode:
 
 def doc_uri(barcode: str) -> NamedNode:
     return NamedNode(DATA + f"doc/{barcode}")
+
+
+def ontology_quads(graph=None) -> list[Quad]:
+    """Class and property declarations; with graph=None they go in the default graph (for ontology/eis.ttl)."""
+    out = [Quad(NamedNode(ONTOLOGY_IRI), RDF_TYPE, NamedNode(OWL + "Ontology"), graph),
+           Quad(NamedNode(ONTOLOGY_IRI), LABEL, Literal("EIS knowledge-graph ontology"), graph),
+           Quad(NamedNode(ONTOLOGY_IRI), COMMENT, Literal(
+               "Vocabulary for facts extracted from U.S. Environmental Impact Statements. "
+               "Source: https://github.com/aerithnetzer/eis-graph"), graph)]
+    for kinds, owl_type in (({"EISDocument": (None, "An Environmental Impact Statement.")} | CLASSES, "Class"),
+                            ({**RELATIONS, **DOC_LINK_PREDICATES}, "ObjectProperty"), (ATTRIBUTES, "DatatypeProperty")):
+        for term, desc in kinds.items():
+            desc = desc[1] if isinstance(desc, tuple) else desc
+            out += [Quad(eis(term), RDF_TYPE, NamedNode(OWL + owl_type), graph),
+                    Quad(eis(term), LABEL, Literal(term), graph),
+                    Quad(eis(term), COMMENT, Literal(desc), graph),
+                    Quad(eis(term), NamedNode(RDFS + "isDefinedBy"), NamedNode(ONTOLOGY_IRI), graph)]
+    return out
+
+
+def write_ontology(path: Path) -> None:
+    store = Store()
+    store.extend(ontology_quads())
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(store.dump(format=RdfFormat.TURTLE, from_graph=DefaultGraph(),
+                                prefixes={"eis": NS, "owl": OWL, "rdfs": RDFS}))
+    print(f"{len(store)} triples -> {path}")
 
 
 def build(raw_dir: Path, work_dir: Path, out_dir: Path) -> Store:
@@ -100,15 +127,7 @@ def build(raw_dir: Path, work_dir: Path, out_dir: Path) -> Store:
     add = lambda s, p, o, g: quads.append(Quad(s, p, o, g))
     evidence = defaultdict(list)
 
-    for cls, (_, desc) in {"EISDocument": (None, "An Environmental Impact Statement in the sample."), **CLASSES}.items():
-        add(eis(cls), RDF_TYPE, NamedNode(OWL + "Class"), G_ONT)
-        add(eis(cls), COMMENT, Literal(desc), G_ONT)
-    for p, desc in {**RELATIONS, **DOC_LINK_PREDICATES}.items():
-        add(eis(p), RDF_TYPE, NamedNode(OWL + "ObjectProperty"), G_ONT)
-        add(eis(p), COMMENT, Literal(desc), G_ONT)
-    for p, desc in ATTRIBUTES.items():
-        add(eis(p), RDF_TYPE, NamedNode(OWL + "DatatypeProperty"), G_ONT)
-        add(eis(p), COMMENT, Literal(desc), G_ONT)
+    quads.extend(ontology_quads(G_ONT))
 
     labelled = set()
     for barcode, chunks in load_extractions(work_dir).items():
@@ -180,3 +199,9 @@ def build(raw_dir: Path, work_dir: Path, out_dir: Path) -> Store:
     (out_dir / "evidence.json").write_text(json.dumps(evidence))
     print(f"{len(store):,} quads -> {out_dir / 'graph.trig'}")
     return store
+
+
+if __name__ == "__main__":
+    import sys
+    if sys.argv[1:] == ["ontology"]:
+        write_ontology(Path(__file__).resolve().parent.parent / "ontology" / "eis.ttl")

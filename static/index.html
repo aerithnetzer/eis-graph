@@ -125,7 +125,8 @@
   </aside>
 </main>
 <script>
-const NS = "https://example.org/eis/";
+const NS = "https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/ontology/eis.ttl#";
+const DATA = "https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/id/";
 const FAMILY = {
   EISDocument: "document", Document: "document",
   Agency: "actor", Organization: "actor", Person: "actor",
@@ -323,7 +324,7 @@ const EXAMPLES = {
   FILTER(?sig IN ("significant", "major"))
 } LIMIT 200`,
   "Document-to-document links": `SELECT ?a ?p ?b WHERE {
-  GRAPH <https://example.org/eis/id/graph/doclinks> { ?x ?p ?y FILTER(?p != owl:sameAs) }
+  GRAPH <https://raw.githubusercontent.com/aerithnetzer/eis-graph/main/id/graph/doclinks> { ?x ?p ?y FILTER(?p != owl:sameAs) }
   ?x rdfs:label ?a . ?y rdfs:label ?b
 }`,
   "Statutes cited across most EISs": `SELECT ?statute (COUNT(DISTINCT ?g) AS ?eiss) WHERE {
@@ -339,7 +340,7 @@ async function runSparql() {
     const r = await api("/api/sparql", { method: "POST", body: JSON.stringify({ query: $("#sparql").value }) });
     if ("boolean" in r) { out.innerHTML = `<p>${r.boolean}</p>`; return; }
     const cell = v => !v ? "" : v.type === "uri"
-      ? `<a data-iri="${esc(v.value)}" style="cursor:pointer;color:inherit">${esc(v.value.replace("https://example.org/eis/id/", "id:"))}</a>` : esc(v.value);
+      ? `<a data-iri="${esc(v.value)}" style="cursor:pointer;color:inherit">${esc(v.value.replace(DATA, "id:"))}</a>` : esc(v.value);
     out.innerHTML = `<p class="muted">${r.rows.length} rows${r.truncated ? " (truncated)" : ""}</p><div class="tbl-wrap"><table>
       <tr>${r.vars.map(v => `<th>${esc(v)}</th>`).join("")}</tr>
       ${r.rows.map(row => `<tr>${r.vars.map(v => `<td>${cell(row[v])}</td>`).join("")}</tr>`).join("")}</table></div>`;

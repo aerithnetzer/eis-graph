@@ -27,7 +27,7 @@ ALT = "http://www.w3.org/2004/02/skos/core#altLabel"
 
 
 def short(uri: str) -> str:
-    for ns, p in ((DATA, "id:"), (NS, "eis:")):  # DATA is under NS, so test it first
+    for ns, p in ((DATA, "id:"), (NS, "eis:")):
         if uri.startswith(ns):
             return p + uri[len(ns):]
     return uri
